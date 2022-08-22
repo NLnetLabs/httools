@@ -1,0 +1,16 @@
+[package]
+name = "httools"
+version = "0.1.0"
+edition = "2021"
+authors = ["Martin Hoffmann <martin@nlnetlabs.nl>"]
+documentation = "https://docs.rs/httools/"
+homepage = "https://github.com/nlnetlabs/httools/"
+repository = "https://github.com/NLnetLabs/httools/"
+license = "BSD-3-Clause"
+
+[dependencies]
+hyper = { version = "0.14", features = [ "server", "tcp", "http1", "http2" ] }
+url = "1.2"
+
+chrono = { version = "0.4", optional = true }
+
