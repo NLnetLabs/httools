@@ -2,7 +2,7 @@
 
 #[cfg(feature = "chrono")]
 use chrono::{DateTime, Utc};
-use hyper::{Body, Request, StatusCode};
+use hyper::{Body, StatusCode};
 use hyper::header::HeaderValue;
 use hyper::http::response::Builder;
 
@@ -13,11 +13,10 @@ use hyper::http::response::Builder;
 pub struct Response(hyper::Response<Body>);
 
 impl Response {
-    /// Creates a response indicating initial validation.
-    pub fn initial_validation() -> Self {
-        ResponseBuilder::service_unavailable()
-            .content_type(ContentType::TEXT)
-            .body("Initial validation ongoing. Please wait.")
+    pub fn ok(content_type: ContentType, body: impl Into<Body>) -> Self {
+        ResponseBuilder::ok()
+            .content_type(content_type)
+            .body(body)
     }
 
     /// Returns a Bad Request response.

@@ -1,20 +1,27 @@
 use std::convert::Infallible;
 use std::future::Future;
 use std::net::SocketAddr;
+use std::sync::Arc;
 use hyper::service::{make_service_fn, service_fn};
 use crate::request::Request;
 use crate::response::Response;
 
-
-pub async fn serve<H: Handler>(handler: H, addr: SocketAddr) {
+pub async fn serve<T, F, Fut>(addr: SocketAddr, state: Arc<T>, op: F)
+where
+    T: Send + Sync + 'static,
+    F: (Fn(Arc<T>, Request) -> Fut) + Send + Sync + Clone + 'static,
+    Fut: Future<Output = Result<Response, Response>> + Send,
+{
     let make_svc = make_service_fn(move |_conn| {
-        let this = handler.clone();
+        let state = state.clone();
+        let op = op.clone();
         async move {
             Ok::<_, Infallible>(service_fn(move |r| {
-                let this = this.clone();
+                let state = state.clone();
+                let op = op.clone();
                 async move {
                     Ok::<_, Infallible>(
-                        match this.handle(r.into()).await {
+                        match op(state, r.into()).await {
                             Ok(resp) => resp,
                             Err(resp) => resp
                         }.into_hyper()
@@ -31,12 +38,4 @@ pub async fn serve<H: Handler>(handler: H, addr: SocketAddr) {
         eprintln!("server error: {}", e);
     }
 }
-
-
-pub trait Handler: Clone + Send + Sync + 'static {
-    type Future: Future<Output = Result<Response, Response>> + Send;
-
-    fn handle(self, request: Request) -> Self::Future;
-}
-
 

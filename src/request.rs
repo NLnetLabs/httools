@@ -7,6 +7,7 @@ use hyper::{Body, Uri};
 use hyper::http::uri::PathAndQuery;
 use url::form_urlencoded;
 use url::percent_encoding::percent_decode;
+use super::response::Response;
 
 
 //------------ Request -------------------------------------------------------
@@ -34,6 +35,17 @@ impl Request {
 
     pub fn query(&self) -> RequestQuery {
         RequestQuery::from_request(self)
+    }
+}
+
+impl Request {
+    pub fn require_get(&self) -> Result<(), Response> {
+        if self.0.method() != hyper::Method::GET {
+            Err(Response::method_not_allowed())
+        }
+        else {
+            Ok(())
+        }
     }
 }
 
