@@ -5,6 +5,8 @@ use chrono::{DateTime, Utc};
 use hyper::{Body, StatusCode};
 use hyper::header::HeaderValue;
 use hyper::http::response::Builder;
+#[cfg(feature = "chrono")]
+use crate::request::Request;
 
 
 //------------ Response -----------------------------------------------------
@@ -61,7 +63,7 @@ impl Response {
     /// returns `None`.
     #[cfg(feature = "chrono")]
     pub fn maybe_not_modified(
-        req: &Request<Body>,
+        req: &Request,
         etag: &str,
         done: DateTime<Utc>,
     ) -> Option<Response> {

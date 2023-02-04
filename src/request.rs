@@ -4,6 +4,7 @@ use std::slice;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use hyper::{Body, Uri};
+use hyper::header::{HeaderMap, HeaderValue};
 use hyper::http::uri::PathAndQuery;
 use url::form_urlencoded;
 use url::percent_encoding::percent_decode;
@@ -35,6 +36,10 @@ impl Request {
 
     pub fn query(&self) -> RequestQuery {
         RequestQuery::from_request(self)
+    }
+
+    pub fn headers(&self) -> &HeaderMap<HeaderValue> {
+        self.0.headers()
     }
 }
 
