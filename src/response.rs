@@ -16,21 +16,21 @@ pub struct Response(hyper::Response<Body>);
 
 impl Response {
     pub fn ok(content_type: ContentType, body: impl Into<Body>) -> Self {
-        ResponseBuilder::ok()
+        ResponseBuilder::new().ok()
             .content_type(content_type)
             .body(body)
     }
 
     /// Returns a Bad Request response.
     pub fn bad_request() -> Self {
-        ResponseBuilder::bad_request()
+        ResponseBuilder::new().bad_request()
             .content_type(ContentType::TEXT)
             .body("Bad Request")
     }
 
     /// Returns a Not Modified response.
     pub fn not_found() -> Self {
-        ResponseBuilder::not_found()
+        ResponseBuilder::new().not_found()
             .content_type(ContentType::TEXT)
             .body("Not Found")
     }
@@ -38,19 +38,21 @@ impl Response {
     /// Returns a Not Modified response.
     #[cfg(feature = "chrono")]
     pub fn not_modified(etag: &str, done: DateTime<Utc>) -> Self {
-        ResponseBuilder::not_modified().etag(etag).last_modified(done).empty()
+        ResponseBuilder::new().not_modified()
+            .etag(etag).last_modified(done)
+            .empty()
     }
 
     /// Returns a Method Not Allowed response.
     pub fn method_not_allowed() -> Self {
-        ResponseBuilder::method_not_allowed()
+        ResponseBuilder::new().method_not_allowed()
             .content_type(ContentType::TEXT)
             .body("Method not allowed.")
     }
 
     /// Returns a Moved Permanently response pointing to the given location.
     pub fn moved_permanently(location: &str) -> Self {
-        ResponseBuilder::moved_permanently()
+        ResponseBuilder::new().moved_permanently()
             .content_type(ContentType::TEXT)
             .location(location)
             .body(format!("Moved permanently to {}", location))
@@ -115,51 +117,57 @@ pub struct ResponseBuilder {
 }
 
 impl ResponseBuilder {
-    /// Creates a new builder with the given status.
-    pub fn new(status: StatusCode) -> Self {
-        ResponseBuilder { builder:  Builder::new().status(status) }
+    fn with(builder: Builder) -> Self {
+        Self { builder }
+    }
+
+    /// Creates a new builder.
+    pub fn new() -> Self {
+        Self::with(Builder::new())
+    }
+
+    pub fn status(self, status: StatusCode) -> Self {
+        Self::with(self.builder.status(status))
     }
 
     /// Creates a new builder for a 200 OK response.
-    pub fn ok() -> Self {
-        Self::new(StatusCode::OK)
+    pub fn ok(self) -> Self {
+        self.status(StatusCode::OK)
     }
 
     /// Creates a new builder for a Service Unavailable response.
-    pub fn service_unavailable() -> Self {
-        Self::new(StatusCode::SERVICE_UNAVAILABLE)
+    pub fn service_unavailable(self) -> Self {
+        self.status(StatusCode::SERVICE_UNAVAILABLE)
     }
 
     /// Creates a new builder for a Bad Request response.
-    pub fn bad_request() -> Self {
-        Self::new(StatusCode::BAD_REQUEST)
+    pub fn bad_request(self) -> Self {
+        self.status(StatusCode::BAD_REQUEST)
     }
 
     /// Creates a new builder for a Not Found response.
-    pub fn not_found() -> Self {
-        Self::new(StatusCode::NOT_FOUND)
+    pub fn not_found(self) -> Self {
+        self.status(StatusCode::NOT_FOUND)
     }
 
     /// Creates a new builder for a Not Modified response.
-    pub fn not_modified() -> Self {
-        Self::new(StatusCode::NOT_MODIFIED)
+    pub fn not_modified(self) -> Self {
+        self.status(StatusCode::NOT_MODIFIED)
     }
 
     /// Creates a new builder for a Method Not Allowed response.
-    pub fn method_not_allowed() -> Self {
-        Self::new(StatusCode::METHOD_NOT_ALLOWED)
+    pub fn method_not_allowed(self) -> Self {
+        self.status(StatusCode::METHOD_NOT_ALLOWED)
     }
 
     /// Creates a new builder for a Moved Permanently response.
-    pub fn moved_permanently() -> Self {
-        Self::new(StatusCode::MOVED_PERMANENTLY)
+    pub fn moved_permanently(self) -> Self {
+        self.status(StatusCode::MOVED_PERMANENTLY)
     }
 
     /// Adds the content type header.
     pub fn content_type(self, content_type: ContentType) -> Self {
-        ResponseBuilder {
-            builder: self.builder.header("Content-Type", content_type.0)
-        }
+        Self::with(self.builder.header("Content-Type", content_type.0))
     }
 
     /// Adds the ETag header.
@@ -190,6 +198,14 @@ impl ResponseBuilder {
         }
     }
 
+    /// Adds a Set-Cookie header using a static str as the value.
+    pub fn set_static_cookie(mut self, value: &'static str) -> Self {
+        self.builder.headers_mut().unwrap().append(
+            "Set-Cookie", HeaderValue::from_static(value)
+        );
+        Self::with(self.builder)
+    }
+
     /// Finalizes the response by adding a body.
     pub fn body(self, body: impl Into<Body>) -> Response {
         Response(
@@ -211,11 +227,18 @@ impl ResponseBuilder {
 pub struct ContentType(HeaderValue);
 
 impl ContentType {
+    pub const CSS: ContentType = ContentType::external("text/css");
     pub const CSV: ContentType = ContentType::external(
         "text/csv;charset=utf-8;header=present"
     );
+    pub const HTML: ContentType = ContentType::external(
+        "text/html;charset=utf-8"
+    );
     pub const JSON: ContentType = ContentType::external(
         "application/json"
+    );
+    pub const SVG: ContentType = ContentType::external(
+        "image/svg+xml"
     );
     pub const TEXT: ContentType = ContentType::external(
         "text/plain;charset=utf-8"
