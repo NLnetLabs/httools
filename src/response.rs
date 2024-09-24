@@ -234,6 +234,9 @@ impl ContentType {
     pub const HTML: ContentType = ContentType::external(
         "text/html;charset=utf-8"
     );
+    pub const JS: ContentType = ContentType::external(
+        "text/javascript"
+    );
     pub const JSON: ContentType = ContentType::external(
         "application/json"
     );
